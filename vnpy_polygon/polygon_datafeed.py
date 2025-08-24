@@ -1,10 +1,11 @@
 from datetime import datetime
-from collections.abc import Callable, Iterator
+from typing import Any
+from collections.abc import Iterator, Callable
 
 from polygon import RESTClient
-from polygon.rest.aggs import Agg, HTTPResponse
+from polygon.rest.aggs import Agg
 
-from vnpy.trader.constant import Interval
+from vnpy.trader.constant import Exchange, Interval
 from vnpy.trader.object import BarData, TickData, HistoryRequest
 from vnpy.trader.datafeed import BaseDatafeed
 from vnpy.trader.setting import SETTINGS
@@ -28,7 +29,7 @@ class PolygonDatafeed(BaseDatafeed):
         self.client: RESTClient
         self.inited: bool = False
 
-    def init(self, output: Callable = print) -> bool:
+    def init(self, output: Callable[[str], Any] = print) -> bool:
         """初始化"""
         if self.inited:
             return True
@@ -48,20 +49,20 @@ class PolygonDatafeed(BaseDatafeed):
         self.inited = True
         return True
 
-    def query_bar_history(self, req: HistoryRequest, output: Callable = print) -> list[BarData] | None:
+    def query_bar_history(self, req: HistoryRequest, output: Callable[[str], Any] = print) -> list[BarData]:
         """查询K线数据"""
         if not self.inited:
             n: bool = self.init(output)
             if not n:
                 return []
 
-        symbol = req.symbol
-        exchange = req.exchange
-        interval = req.interval
-        start = req.start
-        end = req.end
+        symbol: str = req.symbol
+        exchange: Exchange = req.exchange
+        interval: Interval = req.interval
+        start: datetime = req.start
+        end: datetime = req.end
 
-        polygon_interval = INTERVAL_VT2POLYGON.get(interval)
+        polygon_interval: str | None = INTERVAL_VT2POLYGON.get(interval)
         if not polygon_interval:
             output(f"Polygon.io查询K线数据失败：不支持的时间周期{interval.value}")
             return []
@@ -70,7 +71,7 @@ class PolygonDatafeed(BaseDatafeed):
             symbol = "O:" + symbol  # Polygon要求期权代码前加O:前缀
 
         # polygon客户端的list_aggs方法返回一个处理分页的迭代器
-        aggs: Iterator[Agg] | HTTPResponse = self.client.list_aggs(
+        aggs: Iterator[Agg] = self.client.list_aggs(
             ticker=symbol,
             multiplier=1,
             timespan=polygon_interval,
@@ -88,7 +89,7 @@ class PolygonDatafeed(BaseDatafeed):
             if not (start <= dt <= end):
                 continue
 
-            bar = BarData(
+            bar: BarData = BarData(
                 symbol=req.symbol,
                 exchange=exchange,
                 datetime=dt.replace(tzinfo=DB_TZ),
@@ -105,6 +106,6 @@ class PolygonDatafeed(BaseDatafeed):
 
         return bars
 
-    def query_tick_history(self, req: HistoryRequest, output: Callable = print) -> list[TickData] | None:
+    def query_tick_history(self, req: HistoryRequest, output: Callable[[str], Any] = print) -> list[TickData]:
         """查询Tick数据"""
         return []
