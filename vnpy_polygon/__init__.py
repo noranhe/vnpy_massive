@@ -27,4 +27,4 @@ from .polygon_datafeed import PolygonDatafeed as Datafeed
 __all__ = ["Datafeed"]
 
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
