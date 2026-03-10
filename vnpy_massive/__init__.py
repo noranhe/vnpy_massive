@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 
-from .polygon_datafeed import PolygonDatafeed as Datafeed
+from .massive_datafeed import MassiveDatafeed as Datafeed
 
 
 __all__ = ["Datafeed"]
